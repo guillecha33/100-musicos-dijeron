@@ -3,8 +3,9 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Zap, Plus, Check } from 'lucide-react'
-import type { FastMoneySession, FastMoneyAnswer } from '@/lib/types'
+import { Zap, Check } from 'lucide-react'
+import type { FastMoneySession } from '@/lib/types'
+import type { ClientEvent, FastMoneyAnswer } from '@/lib/game-events'
 import { cn } from '@/lib/utils'
 
 const FAST_MONEY_QUESTIONS = [
@@ -20,6 +21,7 @@ interface FastMoneyControlsProps {
   gameId: string
   onAction: (action: { type: string; [key: string]: unknown }) => Promise<{ success: boolean }>
   loading: boolean
+  send?: (event: ClientEvent) => void
 }
 
 interface AnswerEntry {
@@ -27,21 +29,21 @@ interface AnswerEntry {
   points: number
 }
 
-export function FastMoneyControls({ session, gameId, onAction, loading }: FastMoneyControlsProps) {
-  const [playerOneAnswers, setPlayerOneAnswers] = useState<AnswerEntry[]>(
-    FAST_MONEY_QUESTIONS.map(() => ({ answer_text: '', points: 0 }))
+export function FastMoneyControls({ session, onAction, loading, send }: FastMoneyControlsProps) {
+  const [p1Answers, setP1Answers] = useState<AnswerEntry[]>(
+    FAST_MONEY_QUESTIONS.map(() => ({ answer_text: '', points: 0 })),
   )
-  const [playerTwoAnswers, setPlayerTwoAnswers] = useState<AnswerEntry[]>(
-    FAST_MONEY_QUESTIONS.map(() => ({ answer_text: '', points: 0 }))
+  const [p2Answers, setP2Answers] = useState<AnswerEntry[]>(
+    FAST_MONEY_QUESTIONS.map(() => ({ answer_text: '', points: 0 })),
   )
   const [timeLimitOne, setTimeLimitOne] = useState(20)
   const [timeLimitTwo, setTimeLimitTwo] = useState(25)
 
-  const updateAnswer = (
+  const update = (
     setter: React.Dispatch<React.SetStateAction<AnswerEntry[]>>,
     index: number,
     field: keyof AnswerEntry,
-    value: string
+    value: string,
   ) => {
     setter((prev) => {
       const next = [...prev]
@@ -50,23 +52,16 @@ export function FastMoneyControls({ session, gameId, onAction, loading }: FastMo
     })
   }
 
-  const handleSavePlayerOne = async () => {
-    const res = await fetch(`/api/fast-money/${gameId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ player: 1, answers: playerOneAnswers }),
-    })
-    if (res.ok) {
-      await onAction({ type: 'start_fast_money' })
-    }
+  const sendViaWs = (event: ClientEvent) => {
+    if (send) send(event)
   }
 
-  const handleSavePlayerTwo = async () => {
-    const res = await fetch(`/api/fast-money/${gameId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ player: 2, answers: playerTwoAnswers }),
-    })
+  const handleSaveP1 = () => {
+    sendViaWs({ type: 'UPDATE_FAST_MONEY_SCORE', payload: { player: 1, answers: p1Answers as FastMoneyAnswer[] } })
+  }
+
+  const handleSaveP2 = () => {
+    sendViaWs({ type: 'UPDATE_FAST_MONEY_SCORE', payload: { player: 2, answers: p2Answers as FastMoneyAnswer[] } })
   }
 
   if (!session) {
@@ -79,39 +74,23 @@ export function FastMoneyControls({ session, gameId, onAction, loading }: FastMo
         <div className="flex gap-2">
           <div className="flex flex-col gap-1 flex-1">
             <label className="font-body text-xs text-white/40">Tiempo J1 (seg)</label>
-            <Input
-              type="number"
-              value={timeLimitOne}
-              onChange={(e) => setTimeLimitOne(parseInt(e.target.value) || 20)}
-              className="h-8 text-sm"
-            />
+            <Input type="number" value={timeLimitOne} onChange={(e) => setTimeLimitOne(parseInt(e.target.value) || 20)} className="h-8 text-sm" />
           </div>
           <div className="flex flex-col gap-1 flex-1">
             <label className="font-body text-xs text-white/40">Tiempo J2 (seg)</label>
-            <Input
-              type="number"
-              value={timeLimitTwo}
-              onChange={(e) => setTimeLimitTwo(parseInt(e.target.value) || 25)}
-              className="h-8 text-sm"
-            />
+            <Input type="number" value={timeLimitTwo} onChange={(e) => setTimeLimitTwo(parseInt(e.target.value) || 25)} className="h-8 text-sm" />
           </div>
         </div>
-        <Button
-          variant="neon"
-          onClick={() => onAction({ type: 'start_fast_money' })}
-          disabled={loading}
-          className="w-full gap-2"
-        >
-          <Zap className="w-4 h-4" />
-          Iniciar Dinero Rápido
+        <Button variant="neon" onClick={() => sendViaWs({ type: 'START_FAST_MONEY', payload: { timeLimitOne, timeLimitTwo } })} disabled={loading} className="w-full gap-2">
+          <Zap className="w-4 h-4" /> Iniciar Dinero Rápido
         </Button>
       </div>
     )
   }
 
-  const isPlayingOne = session.status === 'playing_one'
-  const isPlayingTwo = session.status === 'playing_two'
-  const isFinished = session.status === 'finished'
+  const isP1 = session.status === 'playing_one'
+  const isP2 = session.status === 'playing_two'
+  const isDone = session.status === 'finished'
 
   return (
     <div className="rounded-lg border border-neon-blue/30 bg-neon-blue/5 p-4 flex flex-col gap-4">
@@ -121,87 +100,54 @@ export function FastMoneyControls({ session, gameId, onAction, loading }: FastMo
           <span className="font-display text-sm tracking-widest uppercase">Dinero Rápido</span>
         </div>
         <span className="font-body text-xs text-white/50 uppercase">
-          {isPlayingOne ? 'Jugador 1 respondiendo' : isPlayingTwo ? 'Jugador 2 respondiendo' : 'Terminado'}
+          {isP1 ? 'Jugador 1' : isP2 ? 'Jugador 2' : 'Terminado'}
         </span>
       </div>
 
-      {/* Player 1 answers */}
-      <div className={cn('flex flex-col gap-2', !isPlayingOne && 'opacity-60')}>
+      {/* Jugador 1 */}
+      <div className={cn('flex flex-col gap-2', !isP1 && 'opacity-60')}>
         <div className="flex items-center justify-between">
           <span className="font-body text-xs text-white/60 font-bold uppercase tracking-wider">Jugador 1</span>
-          {isPlayingOne && (
-            <Button size="sm" variant="neon" className="h-7 gap-1" onClick={handleSavePlayerOne} disabled={loading}>
-              <Check className="w-3 h-3" />
-              Guardar J1
+          {isP1 && (
+            <Button size="sm" variant="neon" className="h-7 gap-1" onClick={handleSaveP1} disabled={loading}>
+              <Check className="w-3 h-3" /> Guardar J1
             </Button>
           )}
         </div>
-        {FAST_MONEY_QUESTIONS.map((q, i) => (
+        {FAST_MONEY_QUESTIONS.map((_, i) => (
           <div key={i} className="flex gap-1.5 items-center">
             <span className="font-body text-xs text-white/30 w-4 shrink-0">{i + 1}</span>
-            <Input
-              placeholder={`R${i + 1}...`}
-              value={playerOneAnswers[i].answer_text}
-              onChange={(e) => updateAnswer(setPlayerOneAnswers, i, 'answer_text', e.target.value)}
-              className="h-7 text-xs flex-1"
-              disabled={!isPlayingOne}
-            />
-            <Input
-              type="number"
-              placeholder="pts"
-              value={playerOneAnswers[i].points || ''}
-              onChange={(e) => updateAnswer(setPlayerOneAnswers, i, 'points', e.target.value)}
-              className="h-7 text-xs w-14"
-              disabled={!isPlayingOne}
-            />
+            <Input placeholder={`R${i + 1}...`} value={p1Answers[i].answer_text} onChange={(e) => update(setP1Answers, i, 'answer_text', e.target.value)} className="h-7 text-xs flex-1" disabled={!isP1} />
+            <Input type="number" placeholder="pts" value={p1Answers[i].points || ''} onChange={(e) => update(setP1Answers, i, 'points', e.target.value)} className="h-7 text-xs w-14" disabled={!isP1} />
           </div>
         ))}
       </div>
 
-      {/* Player 2 answers */}
-      {(isPlayingTwo || isFinished) && (
+      {/* Jugador 2 */}
+      {(isP2 || isDone) && (
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <span className="font-body text-xs text-white/60 font-bold uppercase tracking-wider">Jugador 2</span>
-            {isPlayingTwo && (
-              <Button size="sm" variant="neon" className="h-7 gap-1" onClick={handleSavePlayerTwo} disabled={loading}>
-                <Check className="w-3 h-3" />
-                Guardar J2
+            {isP2 && (
+              <Button size="sm" variant="neon" className="h-7 gap-1" onClick={handleSaveP2} disabled={loading}>
+                <Check className="w-3 h-3" /> Guardar J2
               </Button>
             )}
           </div>
-          {FAST_MONEY_QUESTIONS.map((q, i) => {
-            const p1Answer = playerOneAnswers[i]?.answer_text.toLowerCase().trim()
-            return (
-              <div key={i} className="flex gap-1.5 items-center">
-                <span className="font-body text-xs text-white/30 w-4 shrink-0">{i + 1}</span>
-                <Input
-                  placeholder={`R${i + 1}...`}
-                  value={playerTwoAnswers[i].answer_text}
-                  onChange={(e) => updateAnswer(setPlayerTwoAnswers, i, 'answer_text', e.target.value)}
-                  className="h-7 text-xs flex-1"
-                  disabled={!isPlayingTwo}
-                />
-                <Input
-                  type="number"
-                  placeholder="pts"
-                  value={playerTwoAnswers[i].points || ''}
-                  onChange={(e) => updateAnswer(setPlayerTwoAnswers, i, 'points', e.target.value)}
-                  className="h-7 text-xs w-14"
-                  disabled={!isPlayingTwo}
-                />
-              </div>
-            )
-          })}
+          {FAST_MONEY_QUESTIONS.map((_, i) => (
+            <div key={i} className="flex gap-1.5 items-center">
+              <span className="font-body text-xs text-white/30 w-4 shrink-0">{i + 1}</span>
+              <Input placeholder={`R${i + 1}...`} value={p2Answers[i].answer_text} onChange={(e) => update(setP2Answers, i, 'answer_text', e.target.value)} className="h-7 text-xs flex-1" disabled={!isP2} />
+              <Input type="number" placeholder="pts" value={p2Answers[i].points || ''} onChange={(e) => update(setP2Answers, i, 'points', e.target.value)} className="h-7 text-xs w-14" disabled={!isP2} />
+            </div>
+          ))}
         </div>
       )}
 
-      {isFinished && (
+      {isDone && (
         <div className="text-center py-2">
           <span className="font-display text-gold text-xl">Total: {session.total_score} pts</span>
-          {session.total_score >= 200 && (
-            <p className="font-body text-neon-green text-sm mt-1">¡Meta alcanzada! 🎉</p>
-          )}
+          {session.total_score >= 200 && <p className="font-body text-neon-green text-sm mt-1">¡Meta alcanzada! 🎉</p>}
         </div>
       )}
     </div>

@@ -3,16 +3,26 @@ main = "src/index.ts"
 compatibility_date = "2024-11-01"
 compatibility_flags = ["nodejs_compat"]
 
-# Durable Objects
+# ── Durable Objects ──────────────────────────────────────────
 [[durable_objects.bindings]]
 name = "GAME_ROOM"
 class_name = "GameRoom"
 
-# Migrations: registra las clases de Durable Objects
 [[migrations]]
 tag = "v1"
 new_classes = ["GameRoom"]
 
-# Variables de entorno (agrega las tuyas en el dashboard de Cloudflare)
-# [vars]
-# ALLOWED_ORIGIN = "https://tu-app.vercel.app"
+# ── D1 Database (preguntas y respuestas) ─────────────────────
+# Después de crear con: wrangler d1 create 100-musicos-db
+# reemplaza database_id con el ID que te devuelve ese comando
+[[d1_databases]]
+binding = "DB"
+database_name = "100-musicos-db"
+database_id = "REEMPLAZA_CON_TU_D1_ID"
+
+# ── KV (código de sala ↔ gameId) ─────────────────────────────
+# Después de crear con: wrangler kv:namespace create GAME_CODES
+# reemplaza id con el ID que te devuelve ese comando
+[[kv_namespaces]]
+binding = "GAME_CODES"
+id = "REEMPLAZA_CON_TU_KV_ID"

@@ -1,8 +1,4 @@
-import { createBrowserClient } from '@supabase/ssr'
-
-export function createClient() {
-  return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
-}
+// ELIMINADO — Supabase reemplazado por Cloudflare D1 + KV
+// Todo el acceso a datos va a través del Worker:
+// process.env.NEXT_PUBLIC_WORKER_URL
+export {}

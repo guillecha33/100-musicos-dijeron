@@ -1,4 +1,13 @@
 // ============================================================
+// Env — bindings del Worker
+// ============================================================
+export interface Env {
+  GAME_ROOM: DurableObjectNamespace
+  DB: D1Database
+  GAME_CODES: KVNamespace
+}
+
+// ============================================================
 // Tipos compartidos Worker ↔ Frontend
 // Mantener sincronizados con lib/game-events.ts
 // ============================================================
@@ -20,6 +29,7 @@ export interface Question {
   id: string
   text: string
   category: string
+  is_active: boolean
   answers: Answer[]
 }
 
@@ -58,9 +68,7 @@ export interface GameRoomState {
   roundNumber: number
 }
 
-// ============================================================
-// Eventos Cliente → Servidor
-// ============================================================
+// ── Eventos Cliente → Servidor ────────────────────────────────
 export type ClientEvent =
   | { type: 'JOIN_GAME'; payload?: { role?: string } }
   | { type: 'INIT_GAME'; payload: { gameId: string; roomCode: string } }
@@ -80,9 +88,7 @@ export type ClientEvent =
   | { type: 'END_GAME' }
   | { type: 'RESET_GAME' }
 
-// ============================================================
-// Eventos Servidor → Cliente
-// ============================================================
+// ── Eventos Servidor → Cliente ────────────────────────────────
 export type ServerEvent =
   | { type: 'SYNC_STATE'; payload: GameRoomState }
   | { type: 'CLIENT_COUNT'; payload: { count: number } }

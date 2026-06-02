@@ -1,6 +1,7 @@
-import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { ScreenClient } from './ScreenClient'
+
+const WORKER = process.env.NEXT_PUBLIC_WORKER_URL ?? ''
 
 interface PageProps {
   params: Promise<{ gameId: string }>
@@ -8,17 +9,10 @@ interface PageProps {
 
 export default async function ScreenPage({ params }: PageProps) {
   const { gameId } = await params
-  const supabase = await createClient()
 
-  // Solo verificamos que el juego existe en la DB (para el 404)
-  // El estado real viene del Durable Object vía WebSocket
-  const { error } = await supabase
-    .from('games')
-    .select('id')
-    .eq('id', gameId)
-    .single()
-
-  if (error) notFound()
+  // Solo verifica que la partida existe en KV
+  const res = await fetch(`${WORKER}/games/${gameId}`).catch(() => null)
+  if (!res?.ok) notFound()
 
   return <ScreenClient gameId={gameId} />
 }
