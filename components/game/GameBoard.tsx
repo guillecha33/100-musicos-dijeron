@@ -1,6 +1,7 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
+import { useEffect, useRef, useState } from 'react'
 import { AnswerRow } from './AnswerRow'
 import { StrikeDisplay } from './StrikeDisplay'
 import { ScorePanel } from './ScorePanel'
@@ -20,11 +21,48 @@ export function GameBoard({ game, currentRound, fastMoney, roundNumber = 1 }: Ga
   const answers: Answer[] = currentRound?.question?.answers ?? []
   const sortedAnswers = [...answers].sort((a, b) => a.position - b.position)
 
+  const [showStrikeFlash, setShowStrikeFlash] = useState(false)
+  const prevStrikes = useRef(game.strikes)
+
+  useEffect(() => {
+    if (game.strikes > prevStrikes.current) {
+      setShowStrikeFlash(true)
+      const timer = setTimeout(() => setShowStrikeFlash(false), 1000)
+      prevStrikes.current = game.strikes
+      return () => clearTimeout(timer)
+    }
+    prevStrikes.current = game.strikes
+  }, [game.strikes])
+
   const isFastMoney = game.status === 'fast_money' && fastMoney
   const fastMoneyQuestions = sortedAnswers.map((a) => a.text) // reuse answer texts as question prompts in FM
 
   return (
     <div className="relative flex flex-col h-full w-full bg-bg-primary overflow-hidden select-none">
+      {/* Strike flash overlay */}
+      <AnimatePresence>
+        {showStrikeFlash && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.12 }}
+            className="absolute inset-0 z-[100] flex items-center justify-center bg-strike/25 backdrop-blur-sm"
+          >
+            <motion.span
+              initial={{ scale: 0.3, rotate: -15 }}
+              animate={{ scale: 1, rotate: 0 }}
+              exit={{ scale: 1.4, opacity: 0 }}
+              transition={{ duration: 0.3, ease: [0.34, 1.56, 0.64, 1] }}
+              className="font-display text-[30vw] text-strike leading-none select-none"
+              style={{ textShadow: '0 0 120px rgba(255,23,68,1), 0 0 40px rgba(255,23,68,0.8)' }}
+            >
+              X
+            </motion.span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Scanline overlay */}
       <div
         className="pointer-events-none absolute inset-0 z-50 opacity-[0.03]"
