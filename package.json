@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "dev:worker": "pnpm --filter worker dev",
+    "dev:worker": "pnpm --filter ./worker dev",
     "dev:all": "concurrently -n next,worker -c cyan,yellow \"pnpm dev\" \"pnpm dev:worker\"",
     "deploy:worker": "pnpm --filter worker deploy",
     "type-check": "tsc --noEmit && pnpm --filter worker type-check"

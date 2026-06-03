@@ -18,7 +18,7 @@ import {
   type RoundMultiplier,
 } from '@/lib/game-events'
 import type { GameAction } from '@/lib/types'
-import { Music, Volume2, VolumeX, RotateCcw, ExternalLink, Wifi, WifiOff } from 'lucide-react'
+import { Music, Volume2, VolumeX, RotateCcw, ExternalLink, Wifi, WifiOff, Square } from 'lucide-react'
 
 interface HostPanelProps {
   gameId: string
@@ -28,6 +28,7 @@ interface HostPanelProps {
 export function HostPanel({ gameId, questions }: HostPanelProps) {
   const { gameState, isConnected, send } = useGameSocket(gameId)
   const [confirmReset, setConfirmReset] = useState(false)
+  const [confirmEnd, setConfirmEnd] = useState(false)
 
   const soundEnabled = gameState?.soundEnabled ?? true
   const sound = useSound(soundEnabled)
@@ -99,12 +100,24 @@ export function HostPanel({ gameId, questions }: HostPanelProps) {
   const handleReset = async () => {
     if (!confirmReset) {
       setConfirmReset(true)
+      setConfirmEnd(false)
       setTimeout(() => setConfirmReset(false), 3000)
       return
     }
     send({ type: 'RESET_GAME' })
     setConfirmReset(false)
     return { success: true }
+  }
+
+  const handleEndGame = () => {
+    if (!confirmEnd) {
+      setConfirmEnd(true)
+      setConfirmReset(false)
+      setTimeout(() => setConfirmEnd(false), 3000)
+      return
+    }
+    send({ type: 'END_GAME' })
+    setConfirmEnd(false)
   }
 
   // Adaptadores para los componentes de UI
@@ -226,6 +239,18 @@ export function HostPanel({ gameId, questions }: HostPanelProps) {
               onClick={() => send({ type: 'START_FAST_MONEY' })}
             >
               ⚡ Iniciar Dinero Rápido
+            </Button>
+          )}
+
+          {gameState.gameStatus !== 'lobby' && gameState.gameStatus !== 'finished' && (
+            <Button
+              variant={confirmEnd ? 'destructive' : 'ghost'}
+              size="sm"
+              className={`w-full gap-2 text-xs ${confirmEnd ? '' : 'text-strike/70 hover:text-strike border-strike/20 hover:border-strike/40'}`}
+              onClick={handleEndGame}
+            >
+              <Square className="w-3 h-3" />
+              {confirmEnd ? '¿Finalizar partida?' : 'Finalizar partida'}
             </Button>
           )}
 

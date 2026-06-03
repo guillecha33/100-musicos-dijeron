@@ -16,16 +16,26 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  const fetchWithTimeout = (url: string, options?: RequestInit, ms = 5000) => {
+    const controller = new AbortController()
+    const id = setTimeout(() => controller.abort(), ms)
+    return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(id))
+  }
+
   const handleCreateGame = async () => {
     setLoading(true)
     setError('')
     try {
-      const res = await fetch(`${WORKER}/games`, { method: 'POST' })
+      const res = await fetchWithTimeout(`${WORKER}/games`, { method: 'POST' })
       if (!res.ok) throw new Error('Error al crear partida')
       const { game } = await res.json()
       router.push(`/host/${game.id}`)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error de red')
+      if (e instanceof Error && e.name === 'AbortError') {
+        setError('No se puede conectar al servidor. ¿Está corriendo pnpm dev:all?')
+      } else {
+        setError(e instanceof Error ? e.message : 'Error de red')
+      }
     } finally {
       setLoading(false)
     }
@@ -37,12 +47,17 @@ export default function HomePage() {
     setLoading(true)
     setError('')
     try {
-      const res = await fetch(`${WORKER}/games?code=${code}`)
+      const res = await fetchWithTimeout(`${WORKER}/games?code=${code}`)
       if (!res.ok) { setError('Código no encontrado'); return }
       const { game } = await res.json()
       router.push(`/screen/${game.id}`)
-    } catch { setError('Error de red') }
-    finally { setLoading(false) }
+    } catch (e) {
+      if (e instanceof Error && e.name === 'AbortError') {
+        setError('No se puede conectar al servidor. ¿Está corriendo pnpm dev:all?')
+      } else {
+        setError('Error de red')
+      }
+    } finally { setLoading(false) }
   }
 
   const floatingIcons = [Music, Mic2, Radio, Star, Zap]
