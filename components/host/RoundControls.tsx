@@ -20,6 +20,10 @@ interface RoundControlsProps {
 export function RoundControls({ game, currentRound, questions, onAction, loading }: RoundControlsProps) {
   const [selectedQuestion, setSelectedQuestion] = useState<string>('')
   const [multiplier, setMultiplier] = useState<RoundMultiplier>(1)
+  const [showPreview, setShowPreview] = useState(true)
+
+  const previewQuestion = questions.find((q) => q.id === selectedQuestion)
+  const previewAnswers = previewQuestion ? [...previewQuestion.answers].sort((a, b) => a.position - b.position) : []
 
   const answers = currentRound?.question?.answers ?? []
   const sortedAnswers = [...answers].sort((a, b) => a.position - b.position)
@@ -57,6 +61,29 @@ export function RoundControls({ game, currentRound, questions, onAction, loading
               ))}
             </select>
           </div>
+
+          {/* Answer preview */}
+          {previewQuestion && (
+            <div className="flex flex-col gap-1.5">
+              <button
+                className="flex items-center justify-between font-body text-xs text-white/50 uppercase tracking-wider hover:text-white/70 transition-colors"
+                onClick={() => setShowPreview((v) => !v)}
+              >
+                <span>Respuestas ({previewAnswers.length})</span>
+                <span>{showPreview ? '▲' : '▼'}</span>
+              </button>
+              {showPreview && (
+                <div className="flex flex-col gap-1 rounded-md border border-border/40 bg-bg-elevated p-2">
+                  {previewAnswers.map((a) => (
+                    <div key={a.id} className="flex items-center justify-between px-2 py-1 rounded bg-bg-surface/60">
+                      <span className="font-body text-xs text-white/80">{a.position}. {a.text}</span>
+                      <span className="font-display text-sm text-gold ml-2 shrink-0">{a.points}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Multiplier */}
           <div className="flex flex-col gap-1.5">
@@ -128,7 +155,7 @@ export function RoundControls({ game, currentRound, questions, onAction, loading
 
           {/* Answer list with reveal buttons */}
           <div className="flex flex-col gap-1.5">
-            <span className="font-body text-xs text-white/40 uppercase tracking-wider">Respuestas — clic para revelar</span>
+            <span className="font-body text-xs text-white/40 uppercase tracking-wider">Respuestas (todas visibles al conductor)</span>
             {sortedAnswers.map((answer) => {
               const isRevealed = revealedIds.includes(answer.id)
               return (
@@ -140,6 +167,7 @@ export function RoundControls({ game, currentRound, questions, onAction, loading
                       points={answer.points}
                       isRevealed={isRevealed}
                       multiplier={currentRound.multiplier}
+                      hostView
                     />
                   </div>
                   {!isRevealed && (

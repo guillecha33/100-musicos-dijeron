@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
-import { Plus, Trash2, GripVertical, Save, X } from 'lucide-react'
+import { Save, X } from 'lucide-react'
 import type { Question, Answer, QuestionFormData } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
@@ -38,6 +38,7 @@ export function QuestionForm({ question, onSubmit, onCancel }: QuestionFormProps
           { id: '2', text: '', points: 0, position: 2 },
           { id: '3', text: '', points: 0, position: 3 },
           { id: '4', text: '', points: 0, position: 4 },
+          { id: '5', text: '', points: 0, position: 5 },
         ]
   )
   const [loading, setLoading] = useState(false)
@@ -45,22 +46,8 @@ export function QuestionForm({ question, onSubmit, onCancel }: QuestionFormProps
 
   const totalPoints = answers.reduce((s, a) => s + (a.points || 0), 0)
 
-  const addAnswer = () => {
-    if (answers.length >= 8) return
-    setAnswers((prev) => [
-      ...prev,
-      { id: Date.now().toString(), text: '', points: 0, position: prev.length + 1 },
-    ])
-  }
-
-  const removeAnswer = (id: string) => {
-    if (answers.length <= 4) return
-    setAnswers((prev) =>
-      prev
-        .filter((a) => a.id !== id)
-        .map((a, i) => ({ ...a, position: i + 1 }))
-    )
-  }
+  const addAnswer = () => undefined
+  const removeAnswer = (_id: string) => undefined
 
   const updateAnswer = (id: string, field: keyof AnswerField, value: string) => {
     setAnswers((prev) =>
@@ -74,8 +61,6 @@ export function QuestionForm({ question, onSubmit, onCancel }: QuestionFormProps
 
   const validate = (): string | null => {
     if (!text.trim()) return 'El texto de la pregunta es requerido'
-    if (answers.length < 4) return 'Mínimo 4 respuestas'
-    if (answers.length > 8) return 'Máximo 8 respuestas'
     if (answers.some((a) => !a.text.trim())) return 'Todas las respuestas deben tener texto'
     if (answers.some((a) => a.points <= 0)) return 'Todos los puntos deben ser mayores a 0'
     if (totalPoints > 100) return 'La suma de puntos no debe superar 100'
@@ -150,7 +135,7 @@ export function QuestionForm({ question, onSubmit, onCancel }: QuestionFormProps
       {/* Answers */}
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <Label>Respuestas ({answers.length}/8)</Label>
+          <Label>Respuestas (5 fijas)</Label>
           <div className="flex items-center gap-2">
             <span
               className={cn(
@@ -192,31 +177,11 @@ export function QuestionForm({ question, onSubmit, onCancel }: QuestionFormProps
                   min={1}
                   max={100}
                 />
-                <button
-                  type="button"
-                  onClick={() => removeAnswer(answer.id)}
-                  disabled={answers.length <= 4}
-                  className="p-1.5 rounded text-white/30 hover:text-strike disabled:opacity-20 transition-colors"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
               </div>
             </motion.div>
           ))}
         </AnimatePresence>
 
-        {answers.length < 8 && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={addAnswer}
-            className="gap-2 self-start"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Agregar respuesta
-          </Button>
-        )}
       </div>
 
       {/* Error */}
