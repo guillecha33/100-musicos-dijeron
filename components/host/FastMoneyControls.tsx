@@ -64,6 +64,12 @@ export function FastMoneyControls({ session, onAction, loading, send }: FastMone
     sendViaWs({ type: 'UPDATE_FAST_MONEY_SCORE', payload: { player: 2, answers: p2Answers as FastMoneyAnswer[] } })
   }
 
+  const p1Texts = p1Answers.map((a) => a.answer_text.trim().toLowerCase()).filter(Boolean)
+  const isDuplicateP2 = (index: number) => {
+    const text = p2Answers[index].answer_text.trim().toLowerCase()
+    return text.length > 0 && p1Texts.includes(text)
+  }
+
   if (!session) {
     return (
       <div className="rounded-lg border border-border bg-bg-card p-4 flex flex-col gap-3">
@@ -134,13 +140,27 @@ export function FastMoneyControls({ session, onAction, loading, send }: FastMone
               </Button>
             )}
           </div>
-          {FAST_MONEY_QUESTIONS.map((_, i) => (
-            <div key={i} className="flex gap-1.5 items-center">
-              <span className="font-body text-xs text-white/30 w-4 shrink-0">{i + 1}</span>
-              <Input placeholder={`R${i + 1}...`} value={p2Answers[i].answer_text} onChange={(e) => update(setP2Answers, i, 'answer_text', e.target.value)} className="h-7 text-xs flex-1" disabled={!isP2} />
-              <Input type="number" placeholder="pts" value={p2Answers[i].points || ''} onChange={(e) => update(setP2Answers, i, 'points', e.target.value)} className="h-7 text-xs w-14" disabled={!isP2} />
-            </div>
-          ))}
+          {FAST_MONEY_QUESTIONS.map((_, i) => {
+            const isDup = isDuplicateP2(i)
+            return (
+              <div key={i} className="flex gap-1.5 items-center">
+                <span className="font-body text-xs text-white/30 w-4 shrink-0">{i + 1}</span>
+                <div className="flex-1 relative">
+                  <Input
+                    placeholder={`R${i + 1}...`}
+                    value={p2Answers[i].answer_text}
+                    onChange={(e) => update(setP2Answers, i, 'answer_text', e.target.value)}
+                    className={cn('h-7 text-xs w-full', isDup && 'border-strike text-strike focus:ring-strike')}
+                    disabled={!isP2}
+                  />
+                  {isDup && (
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 font-display text-strike text-xs">✕ DUP</span>
+                  )}
+                </div>
+                <Input type="number" placeholder="pts" value={p2Answers[i].points || ''} onChange={(e) => update(setP2Answers, i, 'points', e.target.value)} className="h-7 text-xs w-14" disabled={!isP2} />
+              </div>
+            )
+          })}
         </div>
       )}
 

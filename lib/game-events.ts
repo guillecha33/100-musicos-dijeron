@@ -56,6 +56,7 @@ export interface GameRoomState {
   soundEnabled: boolean
   connectedClients: number
   roundNumber: number
+  winner: 'team_one' | 'team_two' | 'tie' | null
 }
 
 // ============================================================
@@ -107,6 +108,8 @@ export function stateToGame(s: GameRoomState): Game {
     active_team: s.activeTeam,
     strikes: s.strikes,
     sound_enabled: s.soundEnabled,
+    winner: s.winner,
+    round_number: s.roundNumber,
     created_at: '',
     updated_at: '',
   }

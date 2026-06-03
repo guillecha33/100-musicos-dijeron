@@ -66,6 +66,7 @@ export interface GameRoomState {
   soundEnabled: boolean
   connectedClients: number
   roundNumber: number
+  winner: 'team_one' | 'team_two' | 'tie' | null
 }
 
 // ── Eventos Cliente → Servidor ────────────────────────────────

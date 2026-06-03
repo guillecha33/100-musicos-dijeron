@@ -1,6 +1,7 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
+import { useEffect, useState } from 'react'
 import type { FastMoneySession, FastMoneyAnswer } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
@@ -10,11 +11,53 @@ interface FastMoneyBoardProps {
   isScreen?: boolean
 }
 
+function Countdown({ limitSeconds, active }: { limitSeconds: number; active: boolean }) {
+  const [timeLeft, setTimeLeft] = useState(limitSeconds)
+
+  useEffect(() => {
+    setTimeLeft(limitSeconds)
+  }, [limitSeconds])
+
+  useEffect(() => {
+    if (!active || timeLeft <= 0) return
+    const timer = setTimeout(() => setTimeLeft((t) => t - 1), 1000)
+    return () => clearTimeout(timer)
+  }, [timeLeft, active])
+
+  const isUrgent = timeLeft <= 5
+  const isWarning = timeLeft <= 10 && !isUrgent
+
+  return (
+    <motion.div
+      key={limitSeconds}
+      className={cn(
+        'font-display text-7xl leading-none tabular-nums',
+        isUrgent ? 'text-strike' : isWarning ? 'text-gold' : 'text-neon-green',
+      )}
+      animate={isUrgent ? { scale: [1, 1.08, 1] } : {}}
+      transition={{ duration: 0.4, repeat: isUrgent ? Infinity : 0 }}
+      style={{
+        textShadow: isUrgent
+          ? '0 0 30px rgba(255,23,68,1)'
+          : isWarning
+          ? '0 0 20px rgba(245,197,24,0.8)'
+          : '0 0 20px rgba(0,255,136,0.6)',
+      }}
+    >
+      {timeLeft}
+    </motion.div>
+  )
+}
+
 export function FastMoneyBoard({ session, questions, isScreen = false }: FastMoneyBoardProps) {
   const playerOneAnswers = session.player_one_answers ?? []
   const playerTwoAnswers = session.player_two_answers ?? []
   const totalScore = session.total_score
   const target = 200
+
+  const isPlayingOne = session.status === 'playing_one'
+  const isPlayingTwo = session.status === 'playing_two'
+  const isActive = isPlayingOne || isPlayingTwo
 
   return (
     <div className="flex flex-col gap-4 w-full max-w-4xl mx-auto">
@@ -22,6 +65,20 @@ export function FastMoneyBoard({ session, questions, isScreen = false }: FastMon
         <h2 className="font-display text-gold text-4xl tracking-widest" style={{ textShadow: '0 0 20px rgba(245,197,24,0.6)' }}>
           DINERO RÁPIDO MUSICAL
         </h2>
+
+        {/* Countdown timer */}
+        {isScreen && isActive && (
+          <div className="flex flex-col items-center mt-3 mb-1">
+            <span className="font-body text-xs text-white/30 uppercase tracking-widest mb-1">
+              {isPlayingOne ? 'Jugador 1' : 'Jugador 2'}
+            </span>
+            <Countdown
+              limitSeconds={isPlayingOne ? session.time_limit_one : session.time_limit_two}
+              active={isActive}
+            />
+          </div>
+        )}
+
         <div className="flex items-center justify-center gap-4 mt-2">
           <span className="font-body text-white/50 text-sm uppercase tracking-widest">Meta: 200 pts</span>
           <motion.span

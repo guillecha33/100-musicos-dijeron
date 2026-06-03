@@ -26,6 +26,7 @@ export function createInitialState(gameId = '', roomCode = ''): GameRoomState {
     soundEnabled: true,
     connectedClients: 0,
     roundNumber: 0,
+    winner: null,
   }
 }
 
@@ -128,6 +129,9 @@ export function applyEvent(state: GameRoomState, event: ClientEvent): GameRoomSt
       const teamOneScore = isTeamOne ? newScore : state.teamOneScore
       const teamTwoScore = isTeamOne ? state.teamTwoScore : newScore
       const gameOver = teamOneScore >= 300 || teamTwoScore >= 300
+      const autoWinner = gameOver
+        ? teamOneScore > teamTwoScore ? 'team_one' as const : 'team_two' as const
+        : state.winner
 
       return {
         ...state,
@@ -137,6 +141,7 @@ export function applyEvent(state: GameRoomState, event: ClientEvent): GameRoomSt
         activeTeam: null,
         roundStatus: 'finished',
         gameStatus: gameOver ? 'finished' : state.gameStatus,
+        winner: autoWinner,
       }
     }
 
@@ -208,7 +213,12 @@ export function applyEvent(state: GameRoomState, event: ClientEvent): GameRoomSt
     }
 
     case 'END_GAME': {
-      return { ...state, gameStatus: 'finished' }
+      const winner = state.teamOneScore > state.teamTwoScore
+        ? 'team_one' as const
+        : state.teamTwoScore > state.teamOneScore
+        ? 'team_two' as const
+        : 'tie' as const
+      return { ...state, gameStatus: 'finished', winner }
     }
 
     case 'RESET_GAME': {

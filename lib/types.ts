@@ -15,6 +15,8 @@ export interface Game {
   active_team: ActiveTeam
   strikes: number
   sound_enabled: boolean
+  winner: 'team_one' | 'team_two' | 'tie' | null
+  round_number: number
   created_at: string
   updated_at: string
 }

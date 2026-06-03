@@ -39,6 +39,59 @@ export function GameBoard({ game, currentRound, fastMoney, roundNumber = 1 }: Ga
 
   return (
     <div className="relative flex flex-col h-full w-full bg-bg-primary overflow-hidden select-none">
+      {/* Winner overlay */}
+      <AnimatePresence>
+        {game.status === 'finished' && game.winner && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="absolute inset-0 z-[90] flex flex-col items-center justify-center bg-bg-primary/97 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.6, y: 40 }}
+              animate={{ scale: 1, y: 0 }}
+              transition={{ delay: 0.15, type: 'spring', stiffness: 180, damping: 18 }}
+              className="text-center px-8"
+            >
+              {game.winner === 'tie' ? (
+                <>
+                  <p className="font-body text-white/40 text-sm uppercase tracking-[0.3em] mb-4">EMPATE</p>
+                  <h2
+                    className="font-display text-7xl text-gold leading-none"
+                    style={{ textShadow: '0 0 60px rgba(245,197,24,0.9)' }}
+                  >
+                    EMPATE
+                  </h2>
+                </>
+              ) : (
+                <>
+                  <p className="font-body text-white/40 text-sm uppercase tracking-[0.3em] mb-4">
+                    ¡GANADORES!
+                  </p>
+                  <motion.h2
+                    animate={{ textShadow: ['0 0 40px rgba(245,197,24,0.6)', '0 0 80px rgba(245,197,24,1)', '0 0 40px rgba(245,197,24,0.6)'] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="font-display text-6xl md:text-8xl text-gold leading-none break-words max-w-2xl"
+                  >
+                    {game.winner === 'team_one' ? game.team_one_name : game.team_two_name}
+                  </motion.h2>
+                </>
+              )}
+              <div className="mt-10 flex gap-12 justify-center">
+                <div className="text-center">
+                  <p className="font-body text-white/30 text-xs uppercase tracking-widest mb-1">{game.team_one_name}</p>
+                  <p className="font-display text-4xl text-white/60">{game.team_one_score}</p>
+                </div>
+                <div className="text-center">
+                  <p className="font-body text-white/30 text-xs uppercase tracking-widest mb-1">{game.team_two_name}</p>
+                  <p className="font-display text-4xl text-white/60">{game.team_two_score}</p>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Strike flash overlay */}
       <AnimatePresence>
         {showStrikeFlash && (

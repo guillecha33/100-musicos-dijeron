@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { AnswerRow } from '@/components/game/AnswerRow'
-import { Eye, SkipForward, Swords, Trophy, AlertTriangle } from 'lucide-react'
+import { Eye, SkipForward, Swords, Trophy, AlertTriangle, Zap } from 'lucide-react'
 import type { Game, Round, Question, RoundMultiplier } from '@/lib/types'
 import { getMultiplierLabel, getRoundStatusLabel } from '@/lib/game-utils'
 import { cn } from '@/lib/utils'
@@ -19,11 +19,22 @@ interface RoundControlsProps {
 
 export function RoundControls({ game, currentRound, questions, onAction, loading }: RoundControlsProps) {
   const [selectedQuestion, setSelectedQuestion] = useState<string>('')
-  const [multiplier, setMultiplier] = useState<RoundMultiplier>(1)
   const [showPreview, setShowPreview] = useState(true)
 
+  // Auto-select multiplier based on upcoming round number
+  const nextRound = (game.round_number ?? 0) + 1
+  const autoMultiplier: RoundMultiplier = nextRound === 3 ? 2 : nextRound === 4 ? 3 : 1
+  const [multiplier, setMultiplier] = useState<RoundMultiplier>(autoMultiplier)
+
+  useEffect(() => {
+    setMultiplier(autoMultiplier)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game.round_number])
+
+  const isTiebreaker = nextRound === 5 && game.team_one_score === game.team_two_score
+
   const previewQuestion = questions.find((q) => q.id === selectedQuestion)
-  const previewAnswers = previewQuestion ? [...previewQuestion.answers].sort((a, b) => a.position - b.position) : []
+  const previewAnswers = previewQuestion ? [...(previewQuestion.answers ?? [])].sort((a, b) => a.position - b.position) : []
 
   const answers = currentRound?.question?.answers ?? []
   const sortedAnswers = [...answers].sort((a, b) => a.position - b.position)
@@ -43,7 +54,20 @@ export function RoundControls({ game, currentRound, questions, onAction, loading
       {/* === NO ACTIVE ROUND - Show round selector === */}
       {!currentRound || currentRound.status === 'finished' ? (
         <div className="rounded-lg border border-border bg-bg-card p-4 flex flex-col gap-3">
-          <span className="font-display text-sm text-gold tracking-widest uppercase">Nueva Ronda</span>
+          <div className="flex items-center justify-between">
+            <span className="font-display text-sm text-gold tracking-widest uppercase">Nueva Ronda</span>
+            <span className="font-body text-xs text-white/30">Ronda {nextRound}</span>
+          </div>
+
+          {/* Tiebreaker notice */}
+          {isTiebreaker && (
+            <div className="flex items-center gap-2 rounded-md border border-gold/40 bg-gold/10 px-3 py-2">
+              <Zap className="w-3.5 h-3.5 text-gold shrink-0" />
+              <p className="font-body text-xs text-gold leading-tight">
+                <span className="font-bold">CARA A CARA</span> — Empate detectado. El equipo que acierte la respuesta #1 gana el control.
+              </p>
+            </div>
+          )}
 
           {/* Question selector */}
           <div className="flex flex-col gap-1.5">
