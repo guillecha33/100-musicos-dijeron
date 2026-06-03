@@ -20,8 +20,7 @@ function validate(body: {
   answers?: { text: string; points: number }[]
 }): string | null {
   if (!body.text?.trim()) return 'El texto de la pregunta es requerido'
-  if (!body.answers || body.answers.length < 4) return 'Mínimo 4 respuestas'
-  if (body.answers.length > 8) return 'Máximo 8 respuestas'
+  if (!body.answers || body.answers.length !== 5) return 'Se requieren exactamente 5 respuestas'
   if (body.answers.some((a) => !a.text?.trim())) return 'Todas las respuestas necesitan texto'
   if (body.answers.some((a) => !a.points || a.points <= 0)) return 'Los puntos deben ser mayores a 0'
   const total = body.answers.reduce((s, a) => s + a.points, 0)
