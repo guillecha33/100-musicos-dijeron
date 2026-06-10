@@ -199,6 +199,10 @@ export function HostPanel({ gameId, questions }: HostPanelProps) {
             questions={questions}
             onAction={handleAction}
             loading={false}
+            buzzerEnabled={gameState.buzzerEnabled}
+            buzzerWinner={gameState.buzzerWinner}
+            onEnableBuzzer={() => send({ type: 'ENABLE_BUZZER' })}
+            onResetBuzzer={() => send({ type: 'DISABLE_BUZZER' })}
           />
         </div>
 

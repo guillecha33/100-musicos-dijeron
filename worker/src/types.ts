@@ -67,6 +67,8 @@ export interface GameRoomState {
   connectedClients: number
   roundNumber: number
   winner: 'team_one' | 'team_two' | 'tie' | null
+  buzzerEnabled: boolean
+  buzzerWinner: 'team_one' | 'team_two' | null
 }
 
 // ── Eventos Cliente → Servidor ────────────────────────────────
@@ -88,6 +90,9 @@ export type ClientEvent =
   | { type: 'UPDATE_FAST_MONEY_SCORE'; payload: { player: 1 | 2; answers: FastMoneyAnswer[] } }
   | { type: 'END_GAME' }
   | { type: 'RESET_GAME' }
+  | { type: 'ENABLE_BUZZER' }
+  | { type: 'DISABLE_BUZZER' }
+  | { type: 'BUZZ_IN'; payload: { team: NonNullable<ActiveTeam> } }
 
 // ── Eventos Servidor → Cliente ────────────────────────────────
 export type ServerEvent =

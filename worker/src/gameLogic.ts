@@ -27,6 +27,8 @@ export function createInitialState(gameId = '', roomCode = ''): GameRoomState {
     connectedClients: 0,
     roundNumber: 0,
     winner: null,
+    buzzerEnabled: false,
+    buzzerWinner: null,
   }
 }
 
@@ -209,6 +211,26 @@ export function applyEvent(state: GameRoomState, event: ClientEvent): GameRoomSt
           totalScore: total,
           status: player === 1 ? 'playing_two' : 'finished',
         },
+      }
+    }
+
+    case 'ENABLE_BUZZER': {
+      return { ...state, buzzerEnabled: true, buzzerWinner: null }
+    }
+
+    case 'DISABLE_BUZZER': {
+      return { ...state, buzzerEnabled: false, buzzerWinner: null }
+    }
+
+    case 'BUZZ_IN': {
+      if (!state.buzzerEnabled || state.buzzerWinner) return state
+      const { team } = event.payload
+      return {
+        ...state,
+        buzzerEnabled: false,
+        buzzerWinner: team,
+        activeTeam: team,
+        roundStatus: state.roundStatus === 'face_off' ? 'playing' : state.roundStatus,
       }
     }
 

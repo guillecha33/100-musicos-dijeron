@@ -13,6 +13,7 @@ export default function HomePage() {
   const router = useRouter()
   const [joinCode, setJoinCode] = useState('')
   const [mode, setMode] = useState<'menu' | 'join'>('menu')
+  const [joinRole, setJoinRole] = useState<'team_one' | 'team_two' | 'spectator' | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -44,13 +45,18 @@ export default function HomePage() {
   const handleJoinGame = async () => {
     const code = joinCode.toUpperCase().trim()
     if (!code || code.length !== 6) { setError('Ingresa un código de 6 caracteres'); return }
+    if (!joinRole) { setError('Selecciona cómo quieres participar'); return }
     setLoading(true)
     setError('')
     try {
       const res = await fetchWithTimeout(`${WORKER}/games?code=${code}`)
       if (!res.ok) { setError('Código no encontrado'); return }
       const { game } = await res.json()
-      router.push(`/screen/${game.id}`)
+      if (joinRole === 'spectator') {
+        router.push(`/screen/${game.id}`)
+      } else {
+        router.push(`/join/${game.id}?role=${joinRole}`)
+      }
     } catch (e) {
       if (e instanceof Error && e.name === 'AbortError') {
         setError('No se puede conectar al servidor. ¿Está corriendo pnpm dev:all?')
@@ -145,21 +151,71 @@ export default function HomePage() {
               <div className="rounded-xl border-2 border-neon-blue/30 bg-bg-card p-5 flex flex-col gap-4">
                 <div className="flex items-center gap-2">
                   <LogIn className="w-5 h-5 text-neon-blue" />
-                  <span className="font-display text-neon-blue text-xl tracking-wide">CÓDIGO DE SALA</span>
+                  <span className="font-display text-neon-blue text-xl tracking-wide">UNIRSE A PARTIDA</span>
                 </div>
-                <Input
-                  placeholder="XXXXXX"
-                  value={joinCode}
-                  onChange={(e) => { setJoinCode(e.target.value.toUpperCase()); setError('') }}
-                  maxLength={6}
-                  className="text-center text-2xl font-display tracking-[0.3em] h-14 border-neon-blue/30 focus:ring-neon-blue"
-                  onKeyDown={(e) => e.key === 'Enter' && handleJoinGame()}
-                  autoFocus
-                />
+
+                {/* Código */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="font-body text-xs text-white/40 uppercase tracking-wider">Código de sala</label>
+                  <Input
+                    placeholder="XXXXXX"
+                    value={joinCode}
+                    onChange={(e) => { setJoinCode(e.target.value.toUpperCase()); setError('') }}
+                    maxLength={6}
+                    className="text-center text-2xl font-display tracking-[0.3em] h-14 border-neon-blue/30 focus:ring-neon-blue"
+                    onKeyDown={(e) => e.key === 'Enter' && handleJoinGame()}
+                    autoFocus
+                  />
+                </div>
+
+                {/* Selección de rol */}
+                <div className="flex flex-col gap-2">
+                  <label className="font-body text-xs text-white/40 uppercase tracking-wider">¿Cómo participas?</label>
+                  <div className="flex flex-col gap-2">
+                    {([
+                      { value: 'team_one', label: 'EQUIPO 1', desc: 'Jugador del equipo 1', color: '#0099ff' },
+                      { value: 'team_two', label: 'EQUIPO 2', desc: 'Jugador del equipo 2', color: '#ff6600' },
+                      { value: 'spectator', label: 'ESPECTADOR', desc: 'Solo ver la pantalla', color: '#00d4ff' },
+                    ] as const).map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => setJoinRole(opt.value)}
+                        className="flex items-center gap-3 rounded-lg border-2 p-3 text-left transition-all"
+                        style={{
+                          borderColor: joinRole === opt.value ? opt.color : 'rgba(42,42,96,0.8)',
+                          background: joinRole === opt.value ? `${opt.color}18` : 'transparent',
+                        }}
+                      >
+                        <div
+                          className="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all"
+                          style={{
+                            borderColor: opt.color,
+                            background: joinRole === opt.value ? opt.color : 'transparent',
+                          }}
+                        >
+                          {joinRole === opt.value && <div className="w-2 h-2 rounded-full bg-bg-primary" />}
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-display leading-none" style={{ color: opt.color }}>{opt.label}</p>
+                          <p className="font-body text-xs text-white/30 mt-0.5">{opt.desc}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {error && <p className="text-sm font-body text-strike text-center">{error}</p>}
-                <div className="flex gap-2">
-                  <Button variant="outline" className="flex-1" onClick={() => { setMode('menu'); setError(''); setJoinCode('') }}>Volver</Button>
-                  <Button variant="neon" className="flex-1 gap-2" onClick={handleJoinGame} disabled={loading || joinCode.length !== 6}>
+
+                <div className="flex gap-2 pt-1">
+                  <Button variant="outline" className="flex-1" onClick={() => { setMode('menu'); setError(''); setJoinCode(''); setJoinRole(null) }}>
+                    Volver
+                  </Button>
+                  <Button
+                    variant="neon"
+                    className="flex-1 gap-2"
+                    onClick={handleJoinGame}
+                    disabled={loading || joinCode.length !== 6 || !joinRole}
+                  >
                     <LogIn className="w-4 h-4" />{loading ? 'Buscando...' : 'Unirse'}
                   </Button>
                 </div>

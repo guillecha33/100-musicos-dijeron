@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { AnswerRow } from '@/components/game/AnswerRow'
-import { Eye, SkipForward, Swords, Trophy, AlertTriangle, Zap } from 'lucide-react'
-import type { Game, Round, Question, RoundMultiplier } from '@/lib/types'
+import { Eye, SkipForward, Swords, Trophy, AlertTriangle, Zap, Radio } from 'lucide-react'
+import type { Game, Round, Question, RoundMultiplier, ActiveTeam } from '@/lib/types'
 import { getMultiplierLabel, getRoundStatusLabel } from '@/lib/game-utils'
 import { cn } from '@/lib/utils'
 
@@ -15,9 +15,13 @@ interface RoundControlsProps {
   questions: Question[]
   onAction: (action: { type: string; [key: string]: unknown }) => Promise<{ success: boolean }>
   loading: boolean
+  buzzerEnabled: boolean
+  buzzerWinner: ActiveTeam
+  onEnableBuzzer: () => void
+  onResetBuzzer: () => void
 }
 
-export function RoundControls({ game, currentRound, questions, onAction, loading }: RoundControlsProps) {
+export function RoundControls({ game, currentRound, questions, onAction, loading, buzzerEnabled, buzzerWinner, onEnableBuzzer, onResetBuzzer }: RoundControlsProps) {
   const [selectedQuestion, setSelectedQuestion] = useState<string>('')
   const [showPreview, setShowPreview] = useState(true)
 
@@ -210,6 +214,42 @@ export function RoundControls({ game, currentRound, questions, onAction, loading
               )
             })}
           </div>
+
+          {/* Buzzer section — visible during face_off */}
+          {currentRound.status === 'face_off' && (
+            <div className="rounded-md border border-strike/30 bg-strike/5 p-3 flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <Radio className="w-3.5 h-3.5 text-strike" />
+                <span className="font-body text-xs text-white/60 uppercase tracking-wider">Buzzer</span>
+              </div>
+
+              {buzzerWinner ? (
+                <div className="flex items-center justify-between">
+                  <p className="font-body text-sm text-neon-green font-bold">
+                    ¡{buzzerWinner === 'team_one' ? game.team_one_name : game.team_two_name} presionó!
+                  </p>
+                  <Button size="sm" variant="ghost" className="h-7 text-xs gap-1" onClick={onResetBuzzer}>
+                    Resetear
+                  </Button>
+                </div>
+              ) : buzzerEnabled ? (
+                <div className="flex items-center justify-between">
+                  <p className="font-body text-xs text-strike animate-pulse">Esperando buzzer...</p>
+                  <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-white/40" onClick={onResetBuzzer}>
+                    Cancelar
+                  </Button>
+                </div>
+              ) : (
+                <button
+                  onClick={onEnableBuzzer}
+                  className="w-full rounded-md py-3 flex items-center justify-center gap-3 border-2 border-strike/50 bg-strike/10 hover:bg-strike/20 active:scale-[0.97] transition-all"
+                >
+                  <div className="w-8 h-8 rounded-full bg-strike flex items-center justify-center" style={{ boxShadow: '0 0 12px rgba(255,23,68,0.7)' }} />
+                  <span className="font-display text-strike text-lg tracking-widest">ACTIVAR BUZZER</span>
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Round action buttons */}
           <div className="grid grid-cols-2 gap-2 pt-1">
