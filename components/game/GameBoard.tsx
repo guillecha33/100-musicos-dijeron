@@ -6,18 +6,16 @@ import { AnswerRow } from './AnswerRow'
 import { StrikeDisplay } from './StrikeDisplay'
 import { ScorePanel } from './ScorePanel'
 import { RoundStatus } from './RoundStatus'
-import { FastMoneyBoard } from './FastMoneyBoard'
-import type { Game, Round, FastMoneySession, Answer } from '@/lib/types'
+import type { Game, Round, Answer } from '@/lib/types'
 import { Music, Mic2 } from 'lucide-react'
 
 interface GameBoardProps {
   game: Game
   currentRound: Round | null
-  fastMoney: FastMoneySession | null
   roundNumber?: number
 }
 
-export function GameBoard({ game, currentRound, fastMoney, roundNumber = 1 }: GameBoardProps) {
+export function GameBoard({ game, currentRound, roundNumber = 1 }: GameBoardProps) {
   const answers: Answer[] = currentRound?.question?.answers ?? []
   const sortedAnswers = [...answers].sort((a, b) => a.position - b.position)
 
@@ -33,9 +31,6 @@ export function GameBoard({ game, currentRound, fastMoney, roundNumber = 1 }: Ga
     }
     prevStrikes.current = game.strikes
   }, [game.strikes])
-
-  const isFastMoney = game.status === 'fast_money' && fastMoney
-  const fastMoneyQuestions = sortedAnswers.map((a) => a.text) // reuse answer texts as question prompts in FM
 
   return (
     <div className="relative flex flex-col h-full w-full bg-bg-primary overflow-hidden select-none">
@@ -157,24 +152,9 @@ export function GameBoard({ game, currentRound, fastMoney, roundNumber = 1 }: Ga
         </div>
       </header>
 
-      {/* FAST MONEY MODE */}
+      {/* MAIN GAME */}
       <AnimatePresence mode="wait">
-        {isFastMoney ? (
-          <motion.div
-            key="fast-money"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="flex-1 flex items-center justify-center p-6"
-          >
-            <FastMoneyBoard
-              session={fastMoney}
-              questions={sortedAnswers.map((a) => a.text)}
-              isScreen
-            />
-          </motion.div>
-        ) : (
-          <motion.div
+        <motion.div
             key="main-game"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -246,7 +226,6 @@ export function GameBoard({ game, currentRound, fastMoney, roundNumber = 1 }: Ga
               )}
             </div>
           </motion.div>
-        )}
       </AnimatePresence>
 
       {/* FOOTER: Scores & Strikes */}

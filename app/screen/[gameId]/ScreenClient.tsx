@@ -2,7 +2,7 @@
 
 import { GameBoard } from '@/components/game/GameBoard'
 import { useGameSocket } from '@/hooks/use-game-socket'
-import { stateToGame, stateToRound, stateToFastMoney } from '@/lib/game-events'
+import { stateToGame, stateToRound } from '@/lib/game-events'
 import { Wifi, WifiOff, Loader2 } from 'lucide-react'
 
 interface ScreenClientProps {
@@ -14,7 +14,6 @@ export function ScreenClient({ gameId }: ScreenClientProps) {
 
   const game = gameState ? stateToGame(gameState) : null
   const currentRound = gameState ? stateToRound(gameState) : null
-  const fastMoney = gameState ? stateToFastMoney(gameState) : null
 
   if (!gameState) {
     return (
@@ -43,7 +42,6 @@ export function ScreenClient({ gameId }: ScreenClientProps) {
       <GameBoard
         game={game!}
         currentRound={currentRound}
-        fastMoney={fastMoney}
         roundNumber={gameState.roundNumber}
       />
 

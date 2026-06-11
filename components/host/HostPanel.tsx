@@ -3,7 +3,6 @@
 import { useState, useCallback } from 'react'
 import { TeamControls } from './TeamControls'
 import { RoundControls } from './RoundControls'
-import { FastMoneyControls } from './FastMoneyControls'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { GameBoard } from '@/components/game/GameBoard'
@@ -12,7 +11,6 @@ import { useSound } from '@/hooks/use-sound'
 import {
   stateToGame,
   stateToRound,
-  stateToFastMoney,
   type ClientEvent,
   type Question,
   type RoundMultiplier,
@@ -123,7 +121,6 @@ export function HostPanel({ gameId, questions }: HostPanelProps) {
   // Adaptadores para los componentes de UI
   const game = gameState ? stateToGame(gameState) : null
   const currentRound = gameState ? stateToRound(gameState) : null
-  const fastMoney = gameState ? stateToFastMoney(gameState) : null
 
   if (!gameState) {
     return (
@@ -206,18 +203,6 @@ export function HostPanel({ gameId, questions }: HostPanelProps) {
           />
         </div>
 
-        {/* Dinero rápido */}
-        {(gameState.gameStatus === 'fast_money' || gameState.gameStatus === 'finished') && (
-          <div className="p-4 border-t border-border/30">
-            <FastMoneyControls
-              session={fastMoney}
-              gameId={gameId}
-              onAction={handleAction}
-              loading={false}
-            />
-          </div>
-        )}
-
         {/* Controles inferiores */}
         <div className="p-4 border-t border-border/30 flex flex-col gap-3 sticky bottom-0 bg-bg-surface">
           <div className="flex items-center justify-between">
@@ -234,17 +219,6 @@ export function HostPanel({ gameId, questions }: HostPanelProps) {
               onCheckedChange={() => send({ type: 'TOGGLE_SOUND' })}
             />
           </div>
-
-          {gameState.gameStatus === 'playing' && (
-            <Button
-              variant="neon"
-              size="sm"
-              className="w-full border-neon-blue/50"
-              onClick={() => send({ type: 'START_FAST_MONEY' })}
-            >
-              ⚡ Iniciar Dinero Rápido
-            </Button>
-          )}
 
           {gameState.gameStatus !== 'lobby' && gameState.gameStatus !== 'finished' && (
             <Button
@@ -289,7 +263,6 @@ export function HostPanel({ gameId, questions }: HostPanelProps) {
           <GameBoard
             game={game!}
             currentRound={currentRound}
-            fastMoney={fastMoney}
             roundNumber={gameState.roundNumber}
           />
         </div>
