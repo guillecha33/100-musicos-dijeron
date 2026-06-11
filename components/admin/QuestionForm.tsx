@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
-import { Save, X } from 'lucide-react'
+import { Save, X, Plus, Trash2 } from 'lucide-react'
 import type { Question, Answer, QuestionFormData } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
@@ -46,8 +46,19 @@ export function QuestionForm({ question, onSubmit, onCancel }: QuestionFormProps
 
   const totalPoints = answers.reduce((s, a) => s + (a.points || 0), 0)
 
-  const addAnswer = () => undefined
-  const removeAnswer = (_id: string) => undefined
+  const MIN_ANSWERS = 4
+  const MAX_ANSWERS = 8
+
+  const addAnswer = () => {
+    if (answers.length >= MAX_ANSWERS) return
+    const nextPos = answers.length + 1
+    setAnswers((prev) => [...prev, { id: `new-${Date.now()}`, text: '', points: 0, position: nextPos }])
+  }
+
+  const removeAnswer = (id: string) => {
+    if (answers.length <= MIN_ANSWERS) return
+    setAnswers((prev) => prev.filter((a) => a.id !== id).map((a, i) => ({ ...a, position: i + 1 })))
+  }
 
   const updateAnswer = (id: string, field: keyof AnswerField, value: string) => {
     setAnswers((prev) =>
@@ -135,17 +146,15 @@ export function QuestionForm({ question, onSubmit, onCancel }: QuestionFormProps
       {/* Answers */}
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <Label>Respuestas (5 fijas)</Label>
-          <div className="flex items-center gap-2">
-            <span
-              className={cn(
-                'font-body text-xs',
-                totalPoints > 100 ? 'text-strike' : totalPoints === 100 ? 'text-neon-green' : 'text-white/40'
-              )}
-            >
-              Total: {totalPoints}/100 pts
-            </span>
-          </div>
+          <Label>Respuestas <span className="text-white/30 font-body font-normal normal-case">({answers.length}/{MAX_ANSWERS})</span></Label>
+          <span
+            className={cn(
+              'font-body text-xs',
+              totalPoints > 100 ? 'text-strike' : totalPoints === 100 ? 'text-neon-green' : 'text-white/40'
+            )}
+          >
+            Total: {totalPoints}/100 pts
+          </span>
         </div>
 
         <AnimatePresence>
@@ -154,7 +163,7 @@ export function QuestionForm({ question, onSubmit, onCancel }: QuestionFormProps
               key={answer.id}
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 10 }}
+              exit={{ opacity: 0, x: 10, height: 0 }}
               transition={{ duration: 0.2 }}
               className="flex gap-2 items-center"
             >
@@ -167,20 +176,46 @@ export function QuestionForm({ question, onSubmit, onCancel }: QuestionFormProps
                 onChange={(e) => updateAnswer(answer.id, 'text', e.target.value)}
                 className="flex-1 h-9 text-sm"
               />
-              <div className="flex items-center gap-1 shrink-0">
-                <Input
-                  type="number"
-                  placeholder="pts"
-                  value={answer.points || ''}
-                  onChange={(e) => updateAnswer(answer.id, 'points', e.target.value)}
-                  className="w-16 h-9 text-sm text-center"
-                  min={1}
-                  max={100}
-                />
-              </div>
+              <Input
+                type="number"
+                placeholder="pts"
+                value={answer.points || ''}
+                onChange={(e) => updateAnswer(answer.id, 'points', e.target.value)}
+                className="w-16 h-9 text-sm text-center"
+                min={1}
+                max={100}
+              />
+              <button
+                type="button"
+                onClick={() => removeAnswer(answer.id)}
+                disabled={answers.length <= MIN_ANSWERS}
+                className={cn(
+                  'w-7 h-7 rounded flex items-center justify-center transition-colors shrink-0',
+                  answers.length <= MIN_ANSWERS
+                    ? 'text-white/10 cursor-not-allowed'
+                    : 'text-white/30 hover:text-strike hover:bg-strike/10'
+                )}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
             </motion.div>
           ))}
         </AnimatePresence>
+
+        <button
+          type="button"
+          onClick={addAnswer}
+          disabled={answers.length >= MAX_ANSWERS}
+          className={cn(
+            'flex items-center gap-2 rounded-md border border-dashed px-3 py-2 text-sm font-body transition-colors w-full',
+            answers.length >= MAX_ANSWERS
+              ? 'border-border/20 text-white/15 cursor-not-allowed'
+              : 'border-border hover:border-gold/50 text-white/30 hover:text-gold/70'
+          )}
+        >
+          <Plus className="w-4 h-4" />
+          Agregar respuesta {answers.length >= MAX_ANSWERS ? `(máximo ${MAX_ANSWERS})` : `(${answers.length}/${MAX_ANSWERS})`}
+        </button>
 
       </div>
 
