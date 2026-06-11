@@ -1,10 +1,10 @@
 'use client'
 
-import { useParams, useSearchParams } from 'next/navigation'
+import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGameSocket } from '@/hooks/use-game-socket'
-import { Wifi, WifiOff } from 'lucide-react'
+import { Wifi, WifiOff, ArrowLeft } from 'lucide-react'
 
 type PlayerRole = 'team_one' | 'team_two'
 
@@ -13,6 +13,7 @@ type BuzzerState = 'connecting' | 'idle' | 'active' | 'winner' | 'lost'
 export default function JoinPage() {
   const params = useParams()
   const searchParams = useSearchParams()
+  const router = useRouter()
   const gameId = params.gameId as string
 
   // Si viene con ?role= desde la home, usarlo directamente
@@ -59,6 +60,15 @@ export default function JoinPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-bg-primary select-none overflow-hidden">
+      {/* Back button */}
+      <button
+        onClick={() => router.push('/')}
+        className="fixed top-4 left-4 z-10 flex items-center gap-1.5 font-body text-sm text-white/30 hover:text-white/60 transition-colors"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Salir
+      </button>
+
       {/* Connection indicator */}
       <div className="fixed top-4 right-4 z-10 flex items-center gap-1.5">
         {isConnected

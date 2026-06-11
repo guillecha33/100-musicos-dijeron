@@ -45,10 +45,21 @@ export function RoundControls({ game, currentRound, questions, onAction, loading
   const revealedIds = currentRound?.revealed_answer_ids ?? []
   const allRevealed = answers.length > 0 && answers.every((a) => revealedIds.includes(a.id))
 
+  const [randomMode, setRandomMode] = useState(false)
+
+  const activeQuestions = questions.filter((q) => q.is_active)
+
+  const handleRandomQuestion = () => {
+    if (activeQuestions.length === 0) return
+    const pick = activeQuestions[Math.floor(Math.random() * activeQuestions.length)]
+    setSelectedQuestion(pick.id)
+  }
+
   const handleStartRound = async () => {
     if (!selectedQuestion) return
     await onAction({ type: 'start_round', questionId: selectedQuestion, multiplier })
     setSelectedQuestion('')
+    if (randomMode) handleRandomQuestion()
   }
 
   const MULTIPLIERS: RoundMultiplier[] = [1, 2, 3]
@@ -75,19 +86,55 @@ export function RoundControls({ game, currentRound, questions, onAction, loading
 
           {/* Question selector */}
           <div className="flex flex-col gap-1.5">
-            <label className="font-body text-xs text-white/50 uppercase tracking-wider">Pregunta</label>
-            <select
-              value={selectedQuestion}
-              onChange={(e) => setSelectedQuestion(e.target.value)}
-              className="w-full rounded-md border border-border bg-bg-surface px-3 py-2 text-sm font-body text-white focus:outline-none focus:ring-2 focus:ring-gold"
-            >
-              <option value="">— Seleccionar pregunta —</option>
-              {questions.filter((q) => q.is_active).map((q) => (
-                <option key={q.id} value={q.id}>
-                  {q.text}
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center justify-between">
+              <label className="font-body text-xs text-white/50 uppercase tracking-wider">Pregunta</label>
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !randomMode
+                  setRandomMode(next)
+                  if (next) handleRandomQuestion()
+                  else setSelectedQuestion('')
+                }}
+                className="flex items-center gap-1.5 group"
+              >
+                <div className={cn(
+                  'w-4 h-4 rounded border-2 flex items-center justify-center transition-colors',
+                  randomMode ? 'border-gold bg-gold' : 'border-border bg-transparent group-hover:border-gold/60'
+                )}>
+                  {randomMode && <span className="text-bg-primary text-[10px] leading-none font-bold">✓</span>}
+                </div>
+                <span className="font-body text-xs text-white/40 group-hover:text-white/60 transition-colors">Aleatoria</span>
+              </button>
+            </div>
+            <div className="relative">
+              <select
+                value={selectedQuestion}
+                onChange={(e) => !randomMode && setSelectedQuestion(e.target.value)}
+                disabled={randomMode}
+                className={cn(
+                  'w-full rounded-md border border-border bg-bg-surface px-3 py-2 text-sm font-body text-white focus:outline-none focus:ring-2 focus:ring-gold transition-opacity',
+                  randomMode && 'opacity-50 cursor-not-allowed'
+                )}
+              >
+                <option value="">— Seleccionar pregunta —</option>
+                {activeQuestions.map((q) => (
+                  <option key={q.id} value={q.id}>
+                    {q.text}
+                  </option>
+                ))}
+              </select>
+              {randomMode && (
+                <button
+                  type="button"
+                  onClick={handleRandomQuestion}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 font-body text-xs text-gold hover:text-gold-light transition-colors"
+                  title="Elegir otra aleatoria"
+                >
+                  ↺
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Answer preview */}
